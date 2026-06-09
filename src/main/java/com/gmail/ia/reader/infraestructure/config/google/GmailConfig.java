@@ -15,19 +15,22 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.stereotype.Component;
 
 import java.io.*;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
 @Component
 public class GmailConfig {
     private static final String TOKENS_DIRECTORY_PATH = "tokens";
-    private static final List<String> SCOPES = Collections.singletonList(GmailScopes.GMAIL_READONLY);
+    private static final List<String> SCOPES = Arrays.asList(
+            GmailScopes.GMAIL_READONLY,
+            GmailScopes.GMAIL_SEND
+    );
     private static final GsonFactory JSON_FACTORY = GsonFactory.getDefaultInstance();
 
     @Bean
     public Gmail getGmailService() throws Exception {
         final NetHttpTransport httpTransport = GoogleNetHttpTransport.newTrustedTransport();
-
 
         File credentialsFile = new File("credentials.json");
 
@@ -39,14 +42,13 @@ public class GmailConfig {
 
         GoogleClientSecrets clientSecrets = GoogleClientSecrets.load(JSON_FACTORY, new InputStreamReader(in));
 
-        // Configurar el flujo de autorización de Google
         GoogleAuthorizationCodeFlow flow = new GoogleAuthorizationCodeFlow.Builder(
                 httpTransport, JSON_FACTORY, clientSecrets, SCOPES)
                 .setDataStoreFactory(new FileDataStoreFactory(new java.io.File(TOKENS_DIRECTORY_PATH)))
                 .setAccessType("offline")
                 .build();
 
-        // Abre el navegador automáticamente la primera vez para autorizar
+
         Credential credential = new AuthorizationCodeInstalledApp(flow, new LocalServerReceiver()).authorize("user");
 
         return new Gmail.Builder(httpTransport, JSON_FACTORY, credential)

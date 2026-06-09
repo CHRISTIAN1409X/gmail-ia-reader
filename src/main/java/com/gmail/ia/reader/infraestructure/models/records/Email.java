@@ -59,5 +59,5 @@ public class Email {
 
     @JdbcTypeCode(SqlTypes.JSON)
     @Column(columnDefinition = "jsonb")
-    private List<String> labels; // Mapea el campo 'labels' cortado al final de la imagen
+    private List<String> labels;
 }

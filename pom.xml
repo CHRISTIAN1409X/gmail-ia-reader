@@ -119,6 +119,12 @@
 			<version>v1-rev20240520-2.0.0</version>
 		</dependency>
 
+		<dependency>
+			<groupId>org.apache.pdfbox</groupId>
+			<artifactId>pdfbox</artifactId>
+			<version>3.0.5</version>
+		</dependency>
+
 
 
 

@@ -11,10 +11,15 @@ import jakarta.persistence.SequenceGenerator;
 import jakarta.persistence.Table;
 import java.time.LocalDateTime;
 import java.util.List;
+
+import lombok.AllArgsConstructor;
+import lombok.NoArgsConstructor;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 import com.fasterxml.jackson.databind.JsonNode;
 
+@NoArgsConstructor
+@AllArgsConstructor
 @Entity
 @Table(name = "ia_evaluation")
 public class IaEvaluation {
@@ -34,31 +39,16 @@ public class IaEvaluation {
 
     private LocalDateTime processingDate;
 
-    private String model;
-
-    private String promptVersion;
-
     private Double score;
-
-    private Boolean approved;
-
-    private Double confidence;
-
-    @JdbcTypeCode(SqlTypes.JSON)
-    @Column(columnDefinition = "jsonb")
-    private List<ErrorDetail> errors;
-
-    @JdbcTypeCode(SqlTypes.JSON)
-    @Column(columnDefinition = "jsonb")
-    private List<String> recommendations;
 
     @JdbcTypeCode(SqlTypes.JSON)
     @Column(columnDefinition = "jsonb")
     private List<CriteriaResult> criteriaResults;
-
+/*
     @JdbcTypeCode(SqlTypes.JSON)
     @Column(columnDefinition = "jsonb")
     private JsonNode rawResponse;
+ */
 
     private String status;
 

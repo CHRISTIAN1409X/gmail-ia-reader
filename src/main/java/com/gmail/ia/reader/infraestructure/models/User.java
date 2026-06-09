@@ -8,7 +8,7 @@ import java.util.HashSet;
 import java.util.Set;
 
 @Entity
-@Table(name = "user_account") // Evita la palabra reservada 'user' manteniendo el concepto singular
+@Table(name = "user_account")
 @Getter
 @Setter
 @NoArgsConstructor

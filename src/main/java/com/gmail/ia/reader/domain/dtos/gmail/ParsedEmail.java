@@ -7,6 +7,6 @@ public record ParsedEmail(
         String from,
         String to,
         String subject,
-        List<EmailPart> parts
+        List<EmailAttachmentRef> attachments
 ) {
 }

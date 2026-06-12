@@ -1,29 +1,22 @@
 package com.gmail.ia.reader.application.app.gmail;
 
-import com.gmail.ia.reader.domain.dtos.gmail.ParsedEmail;
+
 import com.google.api.services.gmail.Gmail;
 import com.google.api.services.gmail.model.ListMessagesResponse;
 import com.google.api.services.gmail.model.Message;
+import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
 import java.util.List;
 
+@AllArgsConstructor
 @Component
 public class GmailExtractorService {
 
     private final Gmail gmail;
-    private final GmailMessageParser parser;
 
-    public GmailExtractorService(
-            Gmail gmail,
-            GmailMessageParser parser) {
-
-        this.gmail = gmail;
-        this.parser = parser;
-    }
-
-    public List<ParsedEmail> extractEmails() {
+    public List<String> findUnreadMessageIds() {
 
         try {
 
@@ -40,28 +33,23 @@ public class GmailExtractorService {
 
             return response.getMessages()
                     .stream()
-                    .map(this::loadMessage)
-                    .map(message -> parser.parse(gmail, message))
+                    .map(Message::getId)
                     .toList();
 
         } catch (IOException e) {
-
             throw new RuntimeException(e);
         }
     }
 
-    private Message loadMessage(Message summary) {
+    public Message loadMessage(String messageId) {
 
         try {
-
             return gmail.users()
                     .messages()
-                    .get("me", summary.getId())
+                    .get("me", messageId)
                     .setFormat("full")
                     .execute();
-
         } catch (IOException e) {
-
             throw new RuntimeException(e);
         }
     }

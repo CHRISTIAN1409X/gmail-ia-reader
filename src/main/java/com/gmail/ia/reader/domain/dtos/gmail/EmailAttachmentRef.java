@@ -1,9 +1,10 @@
 package com.gmail.ia.reader.domain.dtos.gmail;
 
-public record EmailPart(
+public record EmailAttachmentRef
+(
         String mimeType,
         String fileName,
-        String content,
-        byte[] attachment
+        String attachmentId,
+        Long sizeBytes
 ) {
 }

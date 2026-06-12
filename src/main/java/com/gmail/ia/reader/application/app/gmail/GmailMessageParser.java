@@ -1,34 +1,25 @@
 package com.gmail.ia.reader.application.app.gmail;
 
-import com.gmail.ia.reader.domain.dtos.gmail.EmailPart;
+import com.gmail.ia.reader.domain.dtos.gmail.EmailAttachmentRef;
 import com.gmail.ia.reader.domain.dtos.gmail.ParsedEmail;
-import com.google.api.services.gmail.Gmail;
 import com.google.api.services.gmail.model.Message;
 import com.google.api.services.gmail.model.MessagePart;
-import com.google.api.services.gmail.model.MessagePartBody;
 import com.google.api.services.gmail.model.MessagePartHeader;
 import org.springframework.stereotype.Component;
-
-import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
-import java.util.Base64;
 import java.util.List;
 
 @Component
 public class GmailMessageParser {
 
-    public ParsedEmail parse(
-            Gmail gmail,
-            Message message) {
+    public ParsedEmail parse(Message message) {
 
-        List<EmailPart> parts = new ArrayList<>();
+        List<EmailAttachmentRef> attachments = new ArrayList<>();
 
         collectParts(
-                gmail,
                 message.getId(),
                 message.getPayload(),
-                parts
+                attachments
         );
 
         return new ParsedEmail(
@@ -36,149 +27,55 @@ public class GmailMessageParser {
                 getHeader(message, "From"),
                 getHeader(message, "To"),
                 getHeader(message, "Subject"),
-                parts
+                attachments
         );
     }
 
     private void collectParts(
-            Gmail gmail,
             String messageId,
             MessagePart part,
-            List<EmailPart> parts) {
+            List<EmailAttachmentRef> attachments
+    ) {
+        if (part == null) return;
 
-        if (part == null) {
-            return;
-        }
-
-        EmailPart emailPart =
-                createEmailPart(
-                        gmail,
-                        messageId,
-                        part
-                );
-
-        if (emailPart != null) {
-            parts.add(emailPart);
-        }
-
-        if (part.getParts() != null) {
-
-            for (MessagePart child : part.getParts()) {
-
-                collectParts(
-                        gmail,
-                        messageId,
-                        child,
-                        parts
-                );
-            }
-        }
-    }
-
-    private EmailPart createEmailPart(
-            Gmail gmail,
-            String messageId,
-            MessagePart part) {
-
-        String mimeType = part.getMimeType();
-        String fileName = part.getFilename();
-
-        String content = null;
-        byte[] attachment = null;
-
-        if (part.getBody() != null &&
-                part.getBody().getData() != null) {
-
-            content = decode(
-                    part.getBody().getData()
-            );
-        }
-
-        if (fileName != null &&
-                !fileName.isBlank()) {
+        if ("application/pdf".equalsIgnoreCase(part.getMimeType())) {
 
             String attachmentId =
-                    part.getBody()
-                            .getAttachmentId();
+                    part.getBody() != null
+                            ? part.getBody().getAttachmentId()
+                            : null;
 
             if (attachmentId != null) {
 
-                attachment = downloadAttachment(
-                        gmail,
-                        messageId,
-                        attachmentId
-                );
+                attachments.add(new EmailAttachmentRef(
+                        part.getMimeType(),
+                        part.getFilename(),
+                        attachmentId,
+                        part.getBody().getSize() != null
+                                ? part.getBody().getSize().longValue()
+                                : 0L
+                ));
             }
         }
 
-        return new EmailPart(
-                mimeType,
-                fileName,
-                content,
-                attachment
-        );
-    }
-
-    private byte[] downloadAttachment(
-            Gmail gmail,
-            String messageId,
-            String attachmentId) {
-
-        try {
-
-            MessagePartBody body =
-                    gmail.users()
-                            .messages()
-                            .attachments()
-                            .get(
-                                    "me",
-                                    messageId,
-                                    attachmentId
-                            )
-                            .execute();
-
-            return Base64.getUrlDecoder()
-                    .decode(body.getData());
-
-        } catch (IOException e) {
-
-            throw new RuntimeException(
-                    "Error downloading attachment",
-                    e
-            );
+        if (part.getParts() != null) {
+            for (MessagePart child : part.getParts()) {
+                collectParts(messageId, child, attachments);
+            }
         }
     }
 
-    private String decode(String data) {
-
-        byte[] bytes =
-                Base64.getUrlDecoder()
-                        .decode(data);
-
-        return new String(
-                bytes,
-                StandardCharsets.UTF_8
-        );
-    }
-
-    private String getHeader(
-            Message message,
-            String headerName) {
+    private String getHeader(Message message, String headerName) {
 
         if (message.getPayload() == null ||
                 message.getPayload().getHeaders() == null) {
-
             return "";
         }
 
         return message.getPayload()
                 .getHeaders()
                 .stream()
-                .filter(header ->
-                        header.getName()
-                                .equalsIgnoreCase(
-                                        headerName
-                                ))
+                .filter(h -> h.getName().equalsIgnoreCase(headerName))
                 .map(MessagePartHeader::getValue)
                 .findFirst()
                 .orElse("");

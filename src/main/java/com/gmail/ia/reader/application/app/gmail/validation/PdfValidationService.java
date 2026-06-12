@@ -1,7 +1,8 @@
 package com.gmail.ia.reader.application.app.gmail.validation;
 
-import com.gmail.ia.reader.domain.dtos.gmail.EmailPart;
 import com.gmail.ia.reader.domain.dtos.gmail.ValidationError;
+import com.gmail.ia.reader.domain.dtos.gmail.pdf.PdfDocument;
+import com.gmail.ia.reader.domain.dtos.gmail.pdf.PdfValidation;
 import org.apache.pdfbox.Loader;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.springframework.stereotype.Service;
@@ -16,80 +17,32 @@ public class PdfValidationService {
     private static final long MAX_SIZE_BYTES =
             5 * 1024 * 1024;
 
-    public List<ValidationError> validate(
-            EmailPart pdfPart) {
+    public PdfValidation validate(PdfDocument pdf) {
+        List<ValidationError> errors = new ArrayList<>();
 
-        List<ValidationError> errors =
-                new ArrayList<>();
+        validateSize(pdf, errors);
+        validatePages(pdf, errors);
 
-        validateNotEmpty(pdfPart, errors);
-        validateSize(pdfPart, errors);
-        validatePages(pdfPart, errors);
-
-        return errors;
+        return new PdfValidation(pdf, errors);
     }
 
-    private void validateNotEmpty(
-            EmailPart pdfPart,
-            List<ValidationError> errors) {
-
-        if (pdfPart.attachment() == null ||
-                pdfPart.attachment().length == 0) {
-
-            errors.add(
-                    new ValidationError(
-                            "PDF_EMPTY",
-                            "El PDF está vacío"
-                    )
-            );
+    private void validateSize(PdfDocument pdf, List<ValidationError> errors) {
+        if (pdf.content() != null && pdf.content().length > MAX_SIZE_BYTES) {
+            errors.add(new ValidationError("PDF_SIZE", "El PDF supera los 5 MB"));
         }
     }
 
-    private void validateSize(
-            EmailPart pdfPart,
-            List<ValidationError> errors) {
-
-        if (pdfPart.attachment() != null &&
-                pdfPart.attachment().length > MAX_SIZE_BYTES) {
-
-            errors.add(
-                    new ValidationError(
-                            "PDF_SIZE",
-                            "El PDF supera los 5 MB"
-                    )
-            );
-        }
-    }
-
-    private void validatePages(
-            EmailPart pdfPart,
-            List<ValidationError> errors) {
-
-        if (pdfPart.attachment() == null) {
+    private void validatePages(PdfDocument pdf, List<ValidationError> errors) {
+        if (pdf.content() == null || pdf.content().length == 0) {
             return;
         }
 
-        try (PDDocument document =
-                     Loader.loadPDF(
-                             pdfPart.attachment())) {
-
+        try (PDDocument document = Loader.loadPDF(pdf.content())) {
             if (document.getNumberOfPages() < 1) {
-
-                errors.add(
-                        new ValidationError(
-                                "PDF_NO_PAGES",
-                                "El PDF no contiene páginas"
-                        )
-                );
+                errors.add(new ValidationError("PDF_NO_PAGES", "El PDF no contiene páginas"));
             }
-
         } catch (IOException e) {
-            errors.add(
-                    new ValidationError(
-                            "PDF_INVALID",
-                            "El archivo PDF es inválido"
-                    )
-            );
+            errors.add(new ValidationError("PDF_INVALID", "El archivo PDF es inválido"));
         }
     }
 }

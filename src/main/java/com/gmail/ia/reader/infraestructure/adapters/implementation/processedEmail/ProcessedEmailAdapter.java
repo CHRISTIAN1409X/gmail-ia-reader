@@ -3,7 +3,6 @@ package com.gmail.ia.reader.infraestructure.adapters.implementation.processedEma
 import com.gmail.ia.reader.global.domain.ports.DaoCrudPort;
 import com.gmail.ia.reader.infraestructure.adapters.interfaces.processedEmail.ProcessedEmailRepository;
 import com.gmail.ia.reader.infraestructure.models.ProcessedEmail;
-import com.gmail.ia.reader.infraestructure.models.User;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.NoResultException;
 import jakarta.persistence.PersistenceContext;
@@ -30,6 +29,22 @@ public class ProcessedEmailAdapter implements DaoCrudPort<ProcessedEmail>,Proces
         } catch (NoResultException e) {
             return Optional.empty();
         }
+    }
+
+    @Override
+    public boolean insertProcessingAtomic(String messageId) {
+        // Usamos una consulta nativa para aprovechar el ON CONFLICT exclusivo de PostgreSQL
+        String nativeQuery = "INSERT INTO processed_email (message_id, status, retry_count, created_at, updated_at) " +
+                "VALUES (:messageId, 'PROCESSING', 1, NOW(), NOW()) " +
+                "ON CONFLICT (message_id) DO NOTHING";
+
+        int rowsAffected = entityManager.createNativeQuery(nativeQuery)
+                .setParameter("messageId", messageId)
+                .executeUpdate();
+
+        // Si rowsAffected es 1, el worker actual ganó la carrera de concurrencia
+        // Si rowsAffected es 0, significa que el correo ya existía (en proceso o terminado)
+        return rowsAffected > 0;
     }
 
     @Override

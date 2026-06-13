@@ -12,9 +12,15 @@ import java.time.LocalDateTime;
 
 @RequiredArgsConstructor
 @Component
-public class ProcessedEmailStatusService {
+public class ProcessedEmailStatusServiceImpl {
     private final ProcessedEmailRepository processedEmailRepository;
     private final DaoCrudPort<ProcessedEmail> daoCrudPort;
+
+
+    @Transactional
+    public boolean markProcessingAtomic(String messageId) {
+        return processedEmailRepository.insertProcessingAtomic(messageId);
+    }
 
     @Transactional
     public void markProcessing(String messageId) {

@@ -10,4 +10,6 @@ import java.util.Optional;
 @Repository
 public interface ProcessedEmailRepository {
     Optional<ProcessedEmail> findPemailByMessageId(String id);
+
+    boolean insertProcessingAtomic(String messageId);
 }

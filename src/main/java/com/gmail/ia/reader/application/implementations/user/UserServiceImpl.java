@@ -2,7 +2,7 @@ package com.gmail.ia.reader.application.implementations.user;
 
 import com.gmail.ia.reader.application.usecases.user.UserService;
 import com.gmail.ia.reader.application.usecases.user.UserServiceBasicOperations;
-import com.gmail.ia.reader.application.usecases.user.role.RoleServiceBasicOperations;
+import com.gmail.ia.reader.application.usecases.role.RoleServiceBasicOperations;
 import com.gmail.ia.reader.domain.dtos.user.UserRequestDto;
 import com.gmail.ia.reader.domain.dtos.user.UserResponseDto;
 import com.gmail.ia.reader.global.domain.ports.DaoCrudPort;
@@ -13,7 +13,6 @@ import com.gmail.ia.reader.infraestructure.advicers.exceptions.ResourceAlreadyEx
 import com.gmail.ia.reader.infraestructure.models.Role;
 import com.gmail.ia.reader.infraestructure.models.User;
 import com.gmail.ia.reader.utils.ThrowableActions;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;

@@ -1,7 +1,7 @@
 package com.gmail.ia.reader.application.implementations.user.role;
 
 
-import com.gmail.ia.reader.application.usecases.user.role.RoleServiceBasicOperations;
+import com.gmail.ia.reader.application.usecases.role.RoleServiceBasicOperations;
 import com.gmail.ia.reader.infraestructure.adapters.interfaces.role.RoleRepository;
 import com.gmail.ia.reader.infraestructure.models.Role;
 import org.springframework.stereotype.Service;

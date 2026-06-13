@@ -1,4 +1,4 @@
-package com.gmail.ia.reader.application.usecases.user.role;
+package com.gmail.ia.reader.application.usecases.role;
 
 import com.gmail.ia.reader.infraestructure.models.Role;
 

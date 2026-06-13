@@ -1,16 +1,12 @@
 package com.gmail.ia.reader.infraestructure.config.rabbit;
 
 import com.gmail.ia.reader.infraestructure.advicers.exceptions.BusinessValidationException;
-import org.springframework.amqp.core.Binding;
-import org.springframework.amqp.core.BindingBuilder;
-import org.springframework.amqp.core.DirectExchange;
-import org.springframework.amqp.core.QueueBuilder;
+import org.springframework.amqp.core.*;
 import org.springframework.amqp.rabbit.config.SimpleRabbitListenerContainerFactory;
 import org.springframework.amqp.rabbit.listener.ConditionalRejectingErrorHandler;
 import org.springframework.amqp.support.converter.Jackson2JsonMessageConverter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.amqp.core.Queue;
 import org.springframework.util.ErrorHandler;
 import org.springframework.amqp.rabbit.connection.ConnectionFactory;
 
@@ -82,7 +78,10 @@ public class RabbitConfig {
 
         factory.setConnectionFactory(connectionFactory);
         factory.setMessageConverter(messageConverter);
-
+        factory.setPrefetchCount(1);
+        factory.setConcurrentConsumers(4);
+        factory.setMaxConcurrentConsumers(4);
+        factory.setAcknowledgeMode(AcknowledgeMode.AUTO);
         return factory;
     }
 }

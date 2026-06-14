@@ -1,20 +1,20 @@
-package com.gmail.ia.reader.infraestructure.models.records;
+package com.gmail.ia.reader.infraestructure.models;
 
-import com.gmail.ia.reader.infraestructure.models.aux.EmailContact;
 import jakarta.persistence.*;
 import lombok.*;
-import org.hibernate.annotations.JdbcTypeCode;
-import org.hibernate.type.SqlTypes;
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 
+@Builder
 @Entity
 @Table(name = "email")
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-@Builder
 public class Email {
 
     @Id
@@ -26,6 +26,10 @@ public class Email {
     )
     private Long id;
 
+    @Builder.Default
+    @OneToMany(mappedBy = "email")
+    private List<FilePath> filePaths = new ArrayList<>();
+
     @Column(name = "gmail_id")
     private String gmailId;
 
@@ -34,19 +38,32 @@ public class Email {
 
     private String subject;
 
-    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(name = "mail_from")
+    private String from;
+
+    @Column(name = "mail_to")
+    private String to;
+
+    @Builder.Default
+    @OneToMany(mappedBy = "email")
+    private List<IaEvaluation> iaEvaluations = new ArrayList<>();
+
+    @CreationTimestamp
+    @Column(name = "created_at", updatable = false, nullable = false)
+    private LocalDateTime createdAt;
+
+    @UpdateTimestamp
+    @Column(name = "updated_at", nullable = false)
+    private LocalDateTime updatedAt;
+
+
+
+    /*
+
+     @JdbcTypeCode(SqlTypes.JSON)
     @Column(name = "from_contact", columnDefinition = "jsonb")
     private EmailContact from;
 
-    @JdbcTypeCode(SqlTypes.JSON)
-    @Column(name = "to_contacts", columnDefinition = "jsonb")
-    private List<EmailContact> to;
-
-    @JdbcTypeCode(SqlTypes.JSON)
-    @Column(name = "cc_contacts", columnDefinition = "jsonb")
-    private List<EmailContact> cc;
-
-    private LocalDateTime date;
 
     @Column(columnDefinition = "TEXT")
     private String snippet;
@@ -60,4 +77,6 @@ public class Email {
     @JdbcTypeCode(SqlTypes.JSON)
     @Column(columnDefinition = "jsonb")
     private List<String> labels;
+
+     */
 }

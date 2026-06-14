@@ -1,23 +1,27 @@
 package com.gmail.ia.reader.application.app.drive;
 
+import com.gmail.ia.reader.domain.enums.DriveFolderEnum;
 import com.gmail.ia.reader.domain.dtos.gmail.pdf.PdfDocument;
+import com.google.api.client.http.ByteArrayContent;
 import com.google.api.client.http.InputStreamContent;
 import com.google.api.services.drive.Drive;
 import com.google.api.services.drive.model.File;
 import com.google.api.services.drive.model.FileList;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
-import java.io.ByteArrayInputStream;
-import java.io.InputStream;
-import java.util.Collections;
-import java.util.Optional;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.List;
 
 @RequiredArgsConstructor
 @Component
 public class DriveStorageService {
 
-
+/*
     private static final String ROOT_FOLDER = "root";
     private static final String FOLDER_MIME_TYPE =
             "application/vnd.google-apps.folder";
@@ -26,6 +30,7 @@ public class DriveStorageService {
 
 
     public String uploadPdf(
+            DriveFolderEnum driveFolderEnum,
             String fullPath,
             PdfDocument pdfDocument) throws Exception {
 
@@ -264,32 +269,206 @@ public class DriveStorageService {
         return value.replace("'", "\\'");
     }
 
-    public void deletePdf(
-            String fullPath,
-            String fileName) throws Exception {
 
-        Optional<String> fileId =
-                findPdfByPath(
-                        fullPath,
-                        fileName
+
+
+
+ */
+
+    @Value("${drive.root-folder-id}")
+    private String rootFolderId;
+
+    private final Drive drive;
+
+    public String uploadPdf(
+            DriveFolderEnum area,
+            String relativePath,
+            PdfDocument pdfDocument){
+
+        try {
+
+            String folderId =
+                    resolveFolderHierarchy(
+                            rootFolderId,
+                            area,
+                            relativePath
+                    );
+
+            File metadata = new File();
+
+            String finalName =
+                    LocalDateTime.now()
+                            .format(
+                                    DateTimeFormatter.ofPattern(
+                                            "yyyyMMdd_HHmmss"
+                                    )
+                            )
+                            + "_"
+                            + pdfDocument.fileName();
+
+            metadata.setName(
+                    finalName
+            );
+
+            metadata.setParents(
+                    List.of(folderId)
+            );
+
+            InputStreamContent content =
+                    new InputStreamContent(
+                            "application/pdf",
+                            Files.newInputStream(
+                                   pdfDocument.tempFile()
+                            )
+                    );
+
+            File uploaded =
+                    drive.files()
+                            .create(metadata, content)
+                            .setFields("id")
+                            .execute();
+
+            return uploaded.getId();
+
+        } catch (Exception e) {
+            throw new RuntimeException(
+                    "Error subiendo PDF a Drive",
+                    e
+            );
+        }
+    }
+
+    private String resolveFolderHierarchy(
+            String rootFolderId,
+            DriveFolderEnum area,
+            String path) throws IOException {
+
+        String currentParentId = rootFolderId;
+
+        currentParentId =
+                findOrCreateFolder(
+                        area.getFolderName(),
+                        currentParentId
                 );
 
-        if (fileId.isEmpty()) {
-            return;
+        if (path == null || path.isBlank()) {
+            return currentParentId;
         }
 
-        driveService.files()
-                .delete(fileId.get())
-                .execute();
+        String[] folders =
+                path.split("/");
+
+        for (String folder : folders) {
+
+            currentParentId =
+                    findOrCreateFolder(
+                            folder,
+                            currentParentId
+                    );
+        }
+
+        return currentParentId;
     }
 
-    public void deleteById(
-            String fileId) throws Exception {
+    private String findOrCreateFolder(
+            String folderName,
+            String parentId) throws IOException {
 
-        driveService.files()
-                .delete(fileId)
-                .execute();
+        String query =
+                String.format(
+                        "mimeType='application/vnd.google-apps.folder' " +
+                                "and name='%s' " +
+                                "and '%s' in parents " +
+                                "and trashed=false",
+                        escapeDriveQuery(folderName),
+                        parentId
+                );
+
+        FileList result =
+                drive.files()
+                        .list()
+                        .setQ(query)
+                        .setFields("files(id,name)")
+                        .execute();
+
+        if (!result.getFiles().isEmpty()) {
+            return result
+                    .getFiles()
+                    .get(0)
+                    .getId();
+        }
+
+        File folder = new File();
+
+        folder.setName(folderName);
+
+        folder.setMimeType(
+                "application/vnd.google-apps.folder"
+        );
+
+        folder.setParents(
+                List.of(parentId)
+        );
+
+        File created =
+                drive.files()
+                        .create(folder)
+                        .setFields("id")
+                        .execute();
+
+        return created.getId();
     }
 
+    public void moveToApproved(
+            String fileId,
+            String path) {
+
+        try {
+
+            String approvedFolderId =
+                    resolveFolderHierarchy(
+                            rootFolderId,
+                            DriveFolderEnum.APROBADOS,
+                            path
+                    );
+
+            File file =
+                    drive.files()
+                            .get(fileId)
+                            .setFields("parents")
+                            .execute();
+
+            String previousParents =
+                    String.join(
+                            ",",
+                            file.getParents()
+                    );
+
+            drive.files()
+                    .update(fileId, null)
+                    .setAddParents(
+                            approvedFolderId
+                    )
+                    .setRemoveParents(
+                            previousParents
+                    )
+                    .execute();
+
+        } catch (Exception e) {
+
+            throw new RuntimeException(
+                    "Error moviendo archivo a aprobados",
+                    e
+            );
+        }
+    }
+
+    private String escapeDriveQuery(
+            String value) {
+
+        return value
+                .replace("\\", "\\\\")
+                .replace("'", "\\'");
+    }
 
 }

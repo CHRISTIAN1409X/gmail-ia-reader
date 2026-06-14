@@ -7,10 +7,10 @@ import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
 
+@Data
 @NoArgsConstructor
 @Entity
 @Table(name = "processed_email")
-@Data
 public class ProcessedEmail {
 
     @Id
@@ -18,7 +18,7 @@ public class ProcessedEmail {
     private String messageId;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "status", nullable = false, length = 50) // <- Quita el columnDefinition
+    @Column(name = "status", nullable = false, length = 50)
     private Status status;
 
     @Column(name = "retry_count", nullable = false)
@@ -29,4 +29,5 @@ public class ProcessedEmail {
 
     @Column(name = "updated_at", nullable = false)
     private LocalDateTime updatedAt;
+
 }

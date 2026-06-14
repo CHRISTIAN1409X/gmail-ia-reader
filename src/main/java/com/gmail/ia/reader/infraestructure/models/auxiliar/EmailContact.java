@@ -1,4 +1,4 @@
-package com.gmail.ia.reader.infraestructure.models.aux;
+package com.gmail.ia.reader.infraestructure.models.auxiliar;
 
 import lombok.*;
 

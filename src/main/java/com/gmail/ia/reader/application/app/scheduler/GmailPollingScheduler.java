@@ -1,7 +1,7 @@
 package com.gmail.ia.reader.application.app.scheduler;
 
 import com.gmail.ia.reader.application.app.gmail.GmailExtractorService;
-import com.gmail.ia.reader.application.app.rabbit.RabbitWorker;
+import com.gmail.ia.reader.application.app.rabbit.RabbitWorkerGmail;
 import com.gmail.ia.reader.domain.dtos.rabbit.GmailEvent;
 import com.gmail.ia.reader.infraestructure.config.rabbit.RabbitConfig;
 import lombok.RequiredArgsConstructor;
@@ -14,7 +14,7 @@ import org.springframework.amqp.rabbit.core.RabbitTemplate;
 public class GmailPollingScheduler {
 
     private final RabbitTemplate rabbitTemplate;
-    private final RabbitWorker plannerProcessingService;
+    private final RabbitWorkerGmail plannerProcessingService;
     private final GmailExtractorService gmailExtractorService;
 
     @Scheduled(fixedDelay = 30000)

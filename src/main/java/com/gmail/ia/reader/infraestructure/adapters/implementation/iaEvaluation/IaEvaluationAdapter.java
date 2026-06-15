@@ -25,8 +25,13 @@ public class IaEvaluationAdapter implements DaoCrudPort<IaEvaluation>, IaEvaluat
 
     @Override
     public Optional<IaEvaluation> get(Long id) {
-        return Optional.empty();
+        return Optional.ofNullable(entityManager.find(
+                IaEvaluation.class,
+                id
+        ));
     }
+
+
 
     @Override
     @Transactional

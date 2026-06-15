@@ -3,7 +3,10 @@ package com.gmail.ia.reader.application.app.rabbit;
 import com.gmail.ia.reader.application.app.drive.DriveStorageService;
 import com.gmail.ia.reader.application.usecases.iaEvaluation.IaEvaluationService;
 import com.gmail.ia.reader.domain.dtos.drive.DriveUploadRecord;
+import com.gmail.ia.reader.domain.dtos.gmail.pdf.PdfDocument;
+import com.gmail.ia.reader.global.domain.ports.DaoCrudPort;
 import com.gmail.ia.reader.infraestructure.config.rabbit.RabbitConfig;
+import com.gmail.ia.reader.infraestructure.models.IaEvaluation;
 import lombok.RequiredArgsConstructor;
 import org.springframework.amqp.AmqpRejectAndDontRequeueException;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
@@ -11,11 +14,16 @@ import org.springframework.stereotype.Component;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+
 @RequiredArgsConstructor
 @Component
 public class RabbitWorkerDrive {
 
     private final DriveStorageService driveStorageService;
+    private final DaoCrudPort<IaEvaluation> iaEvaluationDaoCrudPort;
     private final IaEvaluationService iaEvaluationService;
     private static final Logger log = LoggerFactory.getLogger(RabbitWorkerDrive.class);
 
@@ -42,16 +50,35 @@ public class RabbitWorkerDrive {
             return;
         }
 
+        Path tempPath = null;
+        boolean uploaded = false;
+
         try {
+
+            IaEvaluation evaluation =
+                    iaEvaluationDaoCrudPort.get(
+                            event.idIaEvaluation()
+                    ).orElseThrow();
+
+            tempPath =
+                    Paths.get(
+                            evaluation.getLocalTempPath()
+                    );
+
+            PdfDocument pdf =
+                    new PdfDocument(
+                            evaluation.getPdfName(),
+                            tempPath
+                    );
 
             String driveFileId =
                     driveStorageService.uploadPdf(
-                            event.driveFolderEnum(),
-                            event.path(),
-                            event.pdfDocument()
+                            evaluation.getDriveFolderEnum(),
+                            evaluation.getPathPdf(),
+                            pdf
                     );
 
-            boolean uploaded =
+            uploaded =
                     iaEvaluationService.finishUpload(
                             event.idIaEvaluation(),
                             driveFileId
@@ -66,17 +93,17 @@ public class RabbitWorkerDrive {
             }
 
         } catch (Exception e) {
-
             throw new AmqpRejectAndDontRequeueException(
                     e.getMessage(),
                     e
             );
+
         } finally {
-            if (event.pdfDocument() != null) {
-                event.pdfDocument()
-                        .deleteTempFile();
+            if (uploaded && tempPath != null) {
+                PdfDocument.deleteTempFile(tempPath);
             }
         }
-
     }
+
+
 }

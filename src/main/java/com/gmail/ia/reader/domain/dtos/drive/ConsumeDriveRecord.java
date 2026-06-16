@@ -1,6 +1,6 @@
 package com.gmail.ia.reader.domain.dtos.drive;
 
-public record DriveUploadRecord(
+public record ConsumeDriveRecord(
         Long idIaEvaluation) {
 
 }

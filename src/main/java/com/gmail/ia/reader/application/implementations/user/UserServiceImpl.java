@@ -60,6 +60,7 @@ public class UserServiceImpl implements UserService, UserServiceBasicOperations 
     @Override
     @Transactional
     public <R> R create(UserRequestDto userRequestDto, Function<User,R> function) {
+        System.out.println("ENTRO");
         User user;
         Set<Role> roles;
         Boolean isAdmin = false;

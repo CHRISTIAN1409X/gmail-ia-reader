@@ -2,7 +2,8 @@ package com.gmail.ia.reader.application.app.rabbit;
 
 import com.gmail.ia.reader.application.app.drive.DriveStorageService;
 import com.gmail.ia.reader.application.usecases.iaEvaluation.IaEvaluationService;
-import com.gmail.ia.reader.domain.dtos.drive.DriveUploadRecord;
+import com.gmail.ia.reader.domain.dtos.drive.ConsumeDriveRecord;
+import com.gmail.ia.reader.domain.dtos.drive.UploadDriveResponse;
 import com.gmail.ia.reader.domain.dtos.gmail.pdf.PdfDocument;
 import com.gmail.ia.reader.global.domain.ports.DaoCrudPort;
 import com.gmail.ia.reader.infraestructure.config.rabbit.RabbitConfig;
@@ -14,7 +15,6 @@ import org.springframework.stereotype.Component;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
@@ -33,7 +33,7 @@ public class RabbitWorkerDrive {
                     "driveRabbitListenerContainerFactory"
     )
     public void uploadListenerDrive(
-            DriveUploadRecord event) {
+            ConsumeDriveRecord event) {
 
         boolean acquired =
                 iaEvaluationService.startUpload(
@@ -71,7 +71,7 @@ public class RabbitWorkerDrive {
                             tempPath
                     );
 
-            String driveFileId =
+            UploadDriveResponse uploadDriveResponse =
                     driveStorageService.uploadPdf(
                             evaluation.getDriveFolderEnum(),
                             evaluation.getPathPdf(),
@@ -81,7 +81,7 @@ public class RabbitWorkerDrive {
             uploaded =
                     iaEvaluationService.finishUpload(
                             event.idIaEvaluation(),
-                            driveFileId
+                            uploadDriveResponse
                     );
 
             if (!uploaded) {

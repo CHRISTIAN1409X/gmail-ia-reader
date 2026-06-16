@@ -1,6 +1,7 @@
 package com.gmail.ia.reader.infraestructure.rest.processedEmail;
 
 import com.gmail.ia.reader.application.implementations.processedEmail.ProcessedEmailStatusServiceImpl;
+import com.gmail.ia.reader.application.usecases.iaEvaluation.IaEvaluationService;
 import com.gmail.ia.reader.infraestructure.models.enums.Status;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -11,11 +12,5 @@ import org.springframework.web.bind.annotation.RestController;
 @RequiredArgsConstructor
 @RestController
 public class ProcessedEmailRest {
-    ProcessedEmailStatusServiceImpl processedEmailStatusService;
 
-    @PostMapping("/{messageId}/approve")
-    public ResponseEntity<Void> aprovedPlanner(@PathVariable String messageId){
-        processedEmailStatusService.markProcessed(messageId, Status.APPROVED);
-        return ResponseEntity.noContent().build();
-    };
 }

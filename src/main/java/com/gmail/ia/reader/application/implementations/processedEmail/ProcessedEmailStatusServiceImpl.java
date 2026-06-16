@@ -14,24 +14,12 @@ import java.time.LocalDateTime;
 @Component
 public class ProcessedEmailStatusServiceImpl {
     private final ProcessedEmailRepository processedEmailRepository;
-    private final DaoCrudPort<ProcessedEmail> daoCrudPort;
-
 
     @Transactional
     public boolean markProcessingAtomic(String messageId) {
         return processedEmailRepository.insertProcessingAtomic(messageId);
     }
 
-    @Transactional
-    public void markProcessing(String messageId) {
-        ProcessedEmail email = new ProcessedEmail();
-        email.setMessageId(messageId);
-        email.setStatus(Status.PROCESSING);
-        email.setCreatedAt(LocalDateTime.now());
-        email.setUpdatedAt(LocalDateTime.now());
-        email.setRetryCount(1);
-        daoCrudPort.create(email);
-    }
 
     @Transactional
     public void markProcessed(String messageId, Status status) {

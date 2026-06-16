@@ -5,6 +5,7 @@ import com.gmail.ia.reader.domain.dtos.cloude.CriteriaResult;
 import com.gmail.ia.reader.domain.dtos.gmail.ParsedEmail;
 import com.gmail.ia.reader.domain.dtos.iaevaluation.IaEvaluationCreated;
 import com.gmail.ia.reader.domain.dtos.pdf.PdfProcessingResult;
+import com.gmail.ia.reader.domain.enums.DriveFolderEnum;
 import com.gmail.ia.reader.global.domain.ports.DaoCrudPort;
 import com.gmail.ia.reader.infraestructure.models.Email;
 import com.gmail.ia.reader.infraestructure.models.IaEvaluation;
@@ -49,6 +50,10 @@ public class EmailServiceImpl implements EmailService {
                     .processingMiliSeconds(singleResult.iaResponse().processingTimeMiliseconds())
                     .driveFileId(null)
                     .driveStatus(DriveStatus.PENDING)
+                    .driveFolderEnum(DriveFolderEnum.TEMPORAL)
+                    .localTempPath(singleResult.localTempPath())
+                    .pdfName(singleResult.fileName())
+                    .pathPdf(singleResult.path())
                     .build();
             iaEvaluationDaoCrudPort.create(iaEvaluation);
             createdFile.add(

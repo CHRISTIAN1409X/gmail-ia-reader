@@ -2,8 +2,7 @@ package com.gmail.ia.reader.domain.logic;
 
 import com.gmail.ia.reader.domain.dtos.cloude.PathPart;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 import java.util.stream.Collectors;
 
 public class EmailUtils {
@@ -19,4 +18,19 @@ public class EmailUtils {
                 .map(PathPart::partPath)
                 .collect(Collectors.joining("/"));
     };
+
+    public static Optional<String> extractItemSubject(String subject) {
+
+        Set<String> validItems = Set.of("INDU", "SOFT");
+
+        return Arrays.stream(
+                        subject.toUpperCase()
+                                .replace('-', ' ')
+                                .replace('_', ' ')
+                                .trim()
+                                .split("\\s+")
+                )
+                .filter(validItems::contains)
+                .findFirst();
+    }
 }

@@ -1,6 +1,9 @@
 package com.gmail.ia.reader.infraestructure.adapters.interfaces.iaevaluation;
 
+
 public interface IaEvaluationRepository {
+
+
     boolean markUploading(Long iaEvaluationId);
 
     boolean markUploaded(

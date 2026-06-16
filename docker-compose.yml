@@ -1,0 +1,54 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:16
+    container_name: postgres_db
+    restart: always
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: notabot
+      POSTGRES_PASSWORD: botia
+      POSTGRES_DB: gmail_ia_reader
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - red-gmail-ia-project
+
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: postgres_ux
+    restart: always
+    ports:
+      - "8080:80"
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ia_reader@local.com
+      PGADMIN_DEFAULT_PASSWORD: iasecure123
+    depends_on:
+      - db
+    networks:
+      - red-gmail-ia-project
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: rabbitmq_broker
+    restart: always
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      RABBITMQ_DEFAULT_USER: rabbitangry
+      RABBITMQ_DEFAULT_PASS: jump9*
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    networks:
+      - red-gmail-ia-project
+
+volumes:
+  postgres_data:
+  rabbitmq_data:
+
+networks:
+  red-gmail-ia-project:
+    external: true

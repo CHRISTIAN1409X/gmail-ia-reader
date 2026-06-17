@@ -11,17 +11,24 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @RequiredArgsConstructor
 @Component
 public class DriveStorageService {
 
-/*
+    private static final Logger log = LoggerFactory.getLogger(DriveStorageService.class);
+
+    /*
     private static final String ROOT_FOLDER = "root";
     private static final String FOLDER_MIME_TYPE =
             "application/vnd.google-apps.folder";
@@ -419,6 +426,65 @@ public class DriveStorageService {
         return created.getId();
     }
 
+    public PdfDocument downloadPdfDocument(String fileName) {
+        try {
+            String baseName = fileName.replaceAll("\\.pdf$", "");
+            String normalizedTarget = stripAccents(baseName).replaceAll("\\s+", "").toLowerCase();
+
+            String exactQuery = String.format(
+                    "name = '%s' and trashed=false",
+                    escapeDriveQuery(fileName)
+            );
+            FileList result = drive.files()
+                    .list()
+                    .setQ(exactQuery)
+                    .setFields("files(id)")
+                    .execute();
+
+            String fileId = null;
+            if (!result.getFiles().isEmpty()) {
+                fileId = result.getFiles().get(0).getId();
+            } else {
+                String mcQuery = "name contains 'MC_' and trashed=false";
+                result = drive.files()
+                        .list()
+                        .setQ(mcQuery)
+                        .setFields("files(id, name)")
+                        .setPageSize(200)
+                        .execute();
+
+                for (var file : result.getFiles()) {
+                    String normalizedFile = stripAccents(file.getName())
+                            .replaceAll("\\.pdf$", "")
+                            .replaceAll("\\s+", "")
+                            .toLowerCase();
+                    if (normalizedFile.equals(normalizedTarget)) {
+                        fileId = file.getId();
+                        break;
+                    }
+                }
+            }
+
+            if (fileId == null) {
+                log.warn("Microcurriculum not found in Drive: {}", fileName);
+                return null;
+            }
+
+            ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+            drive.files().get(fileId).executeMediaAndDownloadTo(outputStream);
+
+            Path temp = Files.createTempFile("micro-", ".pdf");
+            Files.write(temp, outputStream.toByteArray());
+
+            log.info("Downloaded microcurriculum from Drive: {}", fileName);
+            return new PdfDocument(fileName, temp);
+
+        } catch (Exception e) {
+            log.error("Error downloading PDF from Drive: {}", fileName, e);
+            return null;
+        }
+    }
+
     public void moveToApproved(
             String fileId,
             String path) {
@@ -461,6 +527,11 @@ public class DriveStorageService {
                     e
             );
         }
+    }
+
+    private String stripAccents(String value) {
+        return java.text.Normalizer.normalize(value, java.text.Normalizer.Form.NFD)
+                .replaceAll("\\p{M}", "");
     }
 
     private String escapeDriveQuery(

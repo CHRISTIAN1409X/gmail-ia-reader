@@ -1,7 +1,8 @@
 package com.gmail.ia.reader.application.app.rabbit;
 
-import com.gmail.ia.reader.application.app.ia.IaAnaliticServiceImpl;
+import com.gmail.ia.reader.application.app.drive.DriveStorageService;
 import com.gmail.ia.reader.application.app.gmail.GmailExtractorService;
+import com.gmail.ia.reader.application.app.usecases.IaAnaliticService;
 import com.gmail.ia.reader.application.app.gmail.GmailMessageParser;
 import com.gmail.ia.reader.application.app.gmail.sender.GmailSender;
 import com.gmail.ia.reader.application.app.gmail.validation.EmailValidationService;
@@ -15,6 +16,7 @@ import com.gmail.ia.reader.domain.enums.DriveFolderEnum;
 import com.gmail.ia.reader.domain.dtos.cloude.IaRespondeRecord;
 import com.gmail.ia.reader.domain.dtos.gmail.EmailValidationResult;
 import com.gmail.ia.reader.domain.dtos.gmail.ParsedEmail;
+import com.gmail.ia.reader.domain.dtos.gmail.pdf.PdfDocument;
 import com.gmail.ia.reader.domain.dtos.gmail.pdf.PdfValidation;
 import com.gmail.ia.reader.domain.dtos.rabbit.GmailEvent;
 import com.gmail.ia.reader.infraestructure.advicers.exceptions.BusinessValidationException;
@@ -44,7 +46,8 @@ import static com.gmail.ia.reader.domain.logic.EmailUtils.recreatePath;
 @Component
 public class RabbitWorkerGmail {
     private static final Logger log = LoggerFactory.getLogger(RabbitWorkerGmail.class);
-    private final IaAnaliticServiceImpl claudeAnaliticService;
+    private final IaAnaliticService iaAnaliticService;
+    private final DriveStorageService driveStorageService;
     private final EmailValidationService emailValidationService;
     private final GmailSender gmailSender;
     private final GmailMessageParser parser;
@@ -91,8 +94,15 @@ public class RabbitWorkerGmail {
 
                 fileName = pdfSanitizier.getPdfDocument().fileName();
 
+                String classname = extractClassname(fileName);
+                String microFileName = "MC_" + classname + ".pdf";
+                PdfDocument microcurriculum = driveStorageService.downloadPdfDocument(microFileName);
+                if (microcurriculum == null) {
+                    log.warn("Microcurriculum not found for planeador {}: {}", fileName, microFileName);
+                }
+
                 try {
-                    IaRespondeRecord iaRespondeRecord = claudeAnaliticService.analize(emailParsed, pdfSanitizier.getPdfDocument());
+                    IaRespondeRecord iaRespondeRecord = iaAnaliticService.analize(emailParsed, pdfSanitizier.getPdfDocument(), microcurriculum);
                     path = recreatePath(iaRespondeRecord.listPathPart());
                     UUID correlationId = UUID.randomUUID();
                     pdfProcessingResults.add(new PdfProcessingResult(correlationId,pdfSanitizier.getPdfDocument(),iaRespondeRecord,path,fileName));
@@ -106,6 +116,9 @@ public class RabbitWorkerGmail {
                                 pdfSanitizier.getPdfDocument()
                                         .clearContent()
                         );
+                    }
+                    if (microcurriculum != null) {
+                        microcurriculum.deleteTempFile();
                     }
                 }
             }
@@ -183,6 +196,15 @@ public class RabbitWorkerGmail {
                 .toList();
     }
 
+
+    private String extractClassname(String fileName) {
+        String name = fileName.replaceAll("\\.pdf$", "");
+        String[] parts = name.split("_", 3);
+        if (parts.length >= 3 && parts[0].matches("\\d+") && parts[1].matches("\\d+")) {
+            return parts[2];
+        }
+        return name;
+    }
 
     private void sendError(EmailValidationResult result) {
 

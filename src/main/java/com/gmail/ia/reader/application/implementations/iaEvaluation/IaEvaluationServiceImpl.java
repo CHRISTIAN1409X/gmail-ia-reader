@@ -4,6 +4,7 @@ import com.gmail.ia.reader.application.app.drive.DriveStorageService;
 import com.gmail.ia.reader.application.implementations.processedEmail.ProcessedEmailStatusServiceImpl;
 import com.gmail.ia.reader.application.usecases.iaEvaluation.IaEvaluationService;
 import com.gmail.ia.reader.domain.dtos.drive.UploadDriveResponse;
+import com.gmail.ia.reader.domain.dtos.iaevaluation.IaEvaluationDetailResponse;
 import com.gmail.ia.reader.domain.enums.DriveFolderEnum;
 import com.gmail.ia.reader.global.domain.ports.DaoCrudPort;
 import com.gmail.ia.reader.infraestructure.adapters.interfaces.iaevaluation.IaEvaluationRepository;
@@ -57,5 +58,19 @@ public class IaEvaluationServiceImpl implements IaEvaluationService {
                         iaEvaluationId,
                         uploadDriveResponse
                 );
+    }
+
+    @Override
+    public IaEvaluationDetailResponse getEvaluation(UUID uuidIa) {
+        IaEvaluation evaluation = iaEvaluationRepository
+                .findByUUID(uuidIa)
+                .orElseThrow(() -> new RuntimeException("Evaluación no encontrada"));
+
+        return new IaEvaluationDetailResponse(
+                evaluation.getUuid(),
+                evaluation.getScore(),
+                evaluation.getPdfName(),
+                evaluation.getCriteriaResults()
+        );
     }
 }

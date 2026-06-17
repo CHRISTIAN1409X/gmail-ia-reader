@@ -43,8 +43,10 @@ public class GeminiAiAdapter {
             4. "Las fechas de la unidad 4 están entre los límites de las fechas del planeador" - Verifica que las fechas de la unidad 4 estén dentro del rango del planeador.
             5. "Estructura del documento" - Verifica que el planeador tenga una estructura válida (encabezado, unidades, fechas, firmas).
 
-            También determina la ruta de clasificación del documento basada en su contenido
-            (ej: periodo académico, materia, nombre del profesor).
+            También determina la clasificación del documento en tres niveles basada en su contenido:
+            - Nivel 1: Semestre académico en número romano (ej: "VIII", "IV", "I")
+            - Nivel 2: Nombre completo de la materia (ej: "Etica profesional Ingeniero")
+            - Nivel 3: Nombre del profesor (ej: "Profesor John Doe")
 
             Formato JSON requerido:
             {
@@ -52,7 +54,9 @@ public class GeminiAiAdapter {
                 { "criterion": "nombre del criterio", "passed": true, "observation": "observación", "severity": 8 }
               ],
               "pathParts": [
-                { "partPath": "nombre del nivel de carpeta" }
+                { "partPath": "nombre del nivel de carpeta 1" },
+                { "partPath": "nombre del nivel de carpeta 2" },
+                { "partPath": "nombre del nivel de carpeta 3" }
               ]
             }
 
@@ -70,8 +74,10 @@ public class GeminiAiAdapter {
             4. "Las fechas de la unidad 4 están entre los límites de las fechas del planeador" - Verifica que las fechas de la unidad 4 estén dentro del rango del planeador.
             5. "Estructura del documento" - Verifica que el documento tenga una estructura de planeador válida (encabezado, unidades, fechas, firmas).
 
-            También determina la ruta de clasificación del documento basada en su contenido
-            (ej: periodo académico, materia, nombre del profesor).
+            También determina la clasificación del documento en tres niveles basada en su contenido:
+            - Nivel 1: Semestre académico en número romano (ej: "VIII", "IV", "I")
+            - Nivel 2: Nombre completo de la materia (ej: "Etica profesional Ingeniero")
+            - Nivel 3: Nombre del profesor (ej: "Profesor John Doe")
 
             Formato JSON requerido:
             {
@@ -79,7 +85,9 @@ public class GeminiAiAdapter {
                 { "criterion": "nombre del criterio", "passed": true, "observation": "observación", "severity": 8 }
               ],
               "pathParts": [
-                { "partPath": "nombre del nivel de carpeta" }
+                { "partPath": "nombre del nivel de carpeta 1" },
+                { "partPath": "nombre del nivel de carpeta 2" },
+                { "partPath": "nombre del nivel de carpeta 3" }
               ]
             }
 

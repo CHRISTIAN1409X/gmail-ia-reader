@@ -19,6 +19,7 @@ public class GmailPollingScheduler {
 
     @Scheduled(fixedDelay = 30000)
     public void pollInbox() {
+
         gmailExtractorService.findUnreadMessageIds()
                 .forEach(id->
                                 rabbitTemplate.convertAndSend(
@@ -27,5 +28,8 @@ public class GmailPollingScheduler {
                                         new GmailEvent(id)
                                 )
                         );
+
+
+
     }
 }

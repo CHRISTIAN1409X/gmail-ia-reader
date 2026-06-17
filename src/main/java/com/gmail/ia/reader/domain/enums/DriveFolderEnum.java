@@ -2,7 +2,8 @@ package com.gmail.ia.reader.domain.enums;
 
 public enum DriveFolderEnum {
     TEMPORAL("temporal"),
-    APROBADOS("aprobados");
+    APROBADOS("aprobados"),
+    MICROCURRICULUMS("micro-curriculums");
 
     private final String folderName;
 

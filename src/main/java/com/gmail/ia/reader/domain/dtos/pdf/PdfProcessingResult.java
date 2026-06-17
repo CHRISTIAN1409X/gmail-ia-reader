@@ -7,7 +7,7 @@ import java.util.UUID;
 
 public record PdfProcessingResult(
         UUID uuid,
-        PdfDocument pdfDocument,
+        String localTempPath,
         IaRespondeRecord iaResponse,
         String path,
         String fileName

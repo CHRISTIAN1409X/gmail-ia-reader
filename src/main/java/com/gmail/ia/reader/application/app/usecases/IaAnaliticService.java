@@ -5,5 +5,5 @@ import com.gmail.ia.reader.domain.dtos.gmail.ParsedEmail;
 import com.gmail.ia.reader.domain.dtos.gmail.pdf.PdfDocument;
 
 public interface IaAnaliticService {
-    IaRespondeRecord analize(ParsedEmail email, PdfDocument planeador, PdfDocument microcurriculum);
+    IaRespondeRecord analize(ParsedEmail email, PdfDocument pdfPlanner,PdfDocument pdfMicro);
 }

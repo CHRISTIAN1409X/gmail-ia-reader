@@ -5,6 +5,7 @@ import com.gmail.ia.reader.domain.dtos.cloude.CriteriaResult;
 import com.gmail.ia.reader.domain.dtos.gmail.ParsedEmail;
 import com.gmail.ia.reader.domain.dtos.iaevaluation.IaEvaluationCreated;
 import com.gmail.ia.reader.domain.dtos.pdf.PdfProcessingResult;
+import com.gmail.ia.reader.domain.enums.DriveFolderEnum;
 import com.gmail.ia.reader.global.domain.ports.DaoCrudPort;
 import com.gmail.ia.reader.infraestructure.models.Email;
 import com.gmail.ia.reader.infraestructure.models.IaEvaluation;
@@ -42,6 +43,7 @@ public class EmailServiceImpl implements EmailService {
         for (PdfProcessingResult singleResult: newPdfProcessing){
             IaEvaluation iaEvaluation = IaEvaluation.builder()
                     .id(null)
+                    .uuid(singleResult.uuid())
                     .score(calculateScoreCriteriaResult(singleResult.iaResponse().listCriteriaResult()))
                     .email(email)
                     .criteriaResults(singleResult.iaResponse().listCriteriaResult())
@@ -49,6 +51,10 @@ public class EmailServiceImpl implements EmailService {
                     .processingMiliSeconds(singleResult.iaResponse().processingTimeMiliseconds())
                     .driveFileId(null)
                     .driveStatus(DriveStatus.PENDING)
+                    .driveFolderEnum(DriveFolderEnum.TEMPORAL)
+                    .localTempPath(singleResult.localTempPath())
+                    .pdfName(singleResult.fileName())
+                    .pathPdf(singleResult.path())
                     .build();
             iaEvaluationDaoCrudPort.create(iaEvaluation);
             createdFile.add(
@@ -65,7 +71,7 @@ public class EmailServiceImpl implements EmailService {
 
     private Double calculateScoreCriteriaResult(List<CriteriaResult> criteriaResults){
         return criteriaResults.stream()
-                .mapToInt(CriteriaResult::severity)
+                .mapToInt(CriteriaResult::score)
                 .average()
                 .orElse(0.0);
     }

@@ -1,5 +1,6 @@
 package com.gmail.ia.reader.infraestructure.adapters.implementation.iaEvaluation;
 
+import com.gmail.ia.reader.domain.dtos.drive.UploadDriveResponse;
 import com.gmail.ia.reader.global.domain.ports.DaoCrudPort;
 import com.gmail.ia.reader.infraestructure.adapters.interfaces.iaevaluation.IaEvaluationRepository;
 import com.gmail.ia.reader.infraestructure.models.IaEvaluation;
@@ -11,6 +12,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 @Repository
 public class IaEvaluationAdapter implements DaoCrudPort<IaEvaluation>, IaEvaluationRepository {
@@ -25,7 +27,24 @@ public class IaEvaluationAdapter implements DaoCrudPort<IaEvaluation>, IaEvaluat
 
     @Override
     public Optional<IaEvaluation> get(Long id) {
-        return Optional.empty();
+        return Optional.ofNullable(entityManager.find(
+                IaEvaluation.class,
+                id
+        ));
+    }
+
+
+    @Override
+    public Optional<IaEvaluation> findByUUID(UUID uuid) {
+        try {
+            IaEvaluation entity = entityManager.createQuery(
+                            "SELECT i FROM IaEvaluation i WHERE i.uuid = :uuid", IaEvaluation.class)
+                    .setParameter("uuid", uuid)
+                    .getSingleResult();
+            return Optional.of(entity);
+        } catch (jakarta.persistence.NoResultException e) {
+            return Optional.empty();
+        }
     }
 
     @Override
@@ -51,18 +70,20 @@ public class IaEvaluationAdapter implements DaoCrudPort<IaEvaluation>, IaEvaluat
     @Transactional
     public boolean markUploaded(
             Long iaEvaluationId,
-            String fileId) {
+            UploadDriveResponse uploadDriveResponse) {
 
         int updatedRows =
                 entityManager.createQuery("""
                     UPDATE IaEvaluation i
                        SET i.driveFileId = :fileId,
+                           i.urlPdfDrive =:url,
                            i.driveStatus = :uploaded
                      WHERE i.id = :id
                        AND i.driveStatus = :uploading
                     """)
-                        .setParameter("fileId", fileId)
+                        .setParameter("fileId", uploadDriveResponse.fileId())
                         .setParameter("uploaded", DriveStatus.UPLOADED)
+                        .setParameter("url",uploadDriveResponse.url())
                         .setParameter("uploading", DriveStatus.UPLOADING)
                         .setParameter("id", iaEvaluationId)
                         .executeUpdate();

@@ -4,5 +4,5 @@ public record CriteriaResult(
         String criterion,
         Boolean passed,
         String observation,
-        byte severity
+        byte score
 ) {}

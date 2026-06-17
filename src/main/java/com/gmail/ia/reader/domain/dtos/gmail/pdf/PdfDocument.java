@@ -16,7 +16,10 @@ public record PdfDocument(
     }
 
     public void deleteTempFile() {
+        deleteTempFile(tempFile);
+    }
 
+    public static void deleteTempFile(Path tempFile){
         if (tempFile == null) {
             return;
         }

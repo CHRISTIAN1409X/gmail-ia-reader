@@ -87,12 +87,12 @@ public class JwtAuthenticationFilter extends UsernamePasswordAuthenticationFilte
                 signWith(Jwt.getSecretKey())
                 .compact();
 
-        ResponseCookie jwtCookie = ResponseCookie.from("p_token",token)
+        ResponseCookie jwtCookie = ResponseCookie.from("p_token", token)
                 .httpOnly(true)
                 .secure(false)
                 .path("/")
                 .maxAge(expirationTime / 1000)
-                .sameSite("Strict")
+                .sameSite("Lax")
                 .build();
 
         response.addHeader(HttpHeaders.SET_COOKIE, jwtCookie.toString());

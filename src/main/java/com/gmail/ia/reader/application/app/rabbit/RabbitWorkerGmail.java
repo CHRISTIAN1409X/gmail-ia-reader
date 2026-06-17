@@ -8,38 +8,35 @@ import com.gmail.ia.reader.application.app.gmail.sender.GmailSender;
 import com.gmail.ia.reader.application.app.gmail.validation.EmailValidationService;
 import com.gmail.ia.reader.application.implementations.processedEmail.ProcessedEmailStatusServiceImpl;
 import com.gmail.ia.reader.application.usecases.email.EmailService;
-import com.gmail.ia.reader.domain.dtos.drive.DriveUploadRecord;
+import com.gmail.ia.reader.domain.dtos.drive.ConsumeDriveRecord;
+import com.gmail.ia.reader.domain.dtos.gmail.pdf.PdfDocument;
 import com.gmail.ia.reader.domain.dtos.iaevaluation.IaEvaluationCreated;
 import com.gmail.ia.reader.domain.dtos.pdf.PdfProcessingResult;
-import com.gmail.ia.reader.domain.dtos.pdf.PdfProcessingResultWithId;
-import com.gmail.ia.reader.domain.enums.DriveFolderEnum;
 import com.gmail.ia.reader.domain.dtos.cloude.IaRespondeRecord;
 import com.gmail.ia.reader.domain.dtos.gmail.EmailValidationResult;
 import com.gmail.ia.reader.domain.dtos.gmail.ParsedEmail;
 import com.gmail.ia.reader.domain.dtos.gmail.pdf.PdfDocument;
 import com.gmail.ia.reader.domain.dtos.gmail.pdf.PdfValidation;
 import com.gmail.ia.reader.domain.dtos.rabbit.GmailEvent;
-import com.gmail.ia.reader.infraestructure.advicers.exceptions.BusinessValidationException;
 import com.gmail.ia.reader.infraestructure.config.rabbit.RabbitConfig;
-import com.gmail.ia.reader.infraestructure.models.FilePath;
 import com.gmail.ia.reader.infraestructure.models.enums.Status;
 import com.google.api.services.gmail.model.Message;
 import lombok.RequiredArgsConstructor;
 import org.springframework.amqp.AmqpRejectAndDontRequeueException;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.stereotype.Component;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
-import java.util.function.Function;
 import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import static com.gmail.ia.reader.domain.logic.EmailUtils.extractItemSubject;
 import static com.gmail.ia.reader.domain.logic.EmailUtils.recreatePath;
 
 @RequiredArgsConstructor
@@ -55,7 +52,7 @@ public class RabbitWorkerGmail {
     private final ProcessedEmailStatusServiceImpl processedEmailStatusService;
     private final EmailService emailService;
     private final RabbitWorkerDrive rabbitWorkerDrive;
-
+    private final RabbitTemplate rabbitTemplate;
 
     private final String[] listEmailsError =
             new String[]{"corjuela1030@cue.edu.co"};
@@ -77,7 +74,8 @@ public class RabbitWorkerGmail {
         try {
             Message message = gmailExtractorService.loadMessage(messageId);
             ParsedEmail emailParsed = parser.parse(message);
-
+            String targetSubject = extractItemSubject(emailParsed.subject())
+                    .orElseThrow(()-> new IllegalArgumentException("No se encontró INDU o SOFT en el asunto:" +emailParsed.subject()));
             pdfSanitized = emailValidationService.validate(emailParsed);
 
             boolean hasErrors = false;
@@ -91,34 +89,20 @@ public class RabbitWorkerGmail {
                     hasErrors = true;
                     continue;
                 }
-
                 fileName = pdfSanitizier.getPdfDocument().fileName();
-
-                String classname = extractClassname(fileName);
-                String microFileName = "MC_" + classname + ".pdf";
-                PdfDocument microcurriculum = driveStorageService.downloadPdfDocument(microFileName);
-                if (microcurriculum == null) {
-                    log.warn("Microcurriculum not found for planeador {}: {}", fileName, microFileName);
-                }
-
+                PdfDocument microPdf = driveStorageService.getMcPdf(targetSubject,fileName);
                 try {
-                    IaRespondeRecord iaRespondeRecord = iaAnaliticService.analize(emailParsed, pdfSanitizier.getPdfDocument(), microcurriculum);
+                    IaRespondeRecord iaRespondeRecord = iaAnaliticService.analize(emailParsed, pdfSanitizier.getPdfDocument(), microPdf);
                     path = recreatePath(iaRespondeRecord.listPathPart());
                     UUID correlationId = UUID.randomUUID();
-                    pdfProcessingResults.add(new PdfProcessingResult(correlationId,pdfSanitizier.getPdfDocument(),iaRespondeRecord,path,fileName));
+                    pdfProcessingResults.add(new PdfProcessingResult(correlationId,pdfSanitizier.getPdfDocument().tempFile().toString(),iaRespondeRecord,path,fileName));
                 } catch (Exception e) {
                     log.error("Error procesando o subiendo el PDF {}", fileName, e);
                     throw new RuntimeException("Error al procesar PDF " + fileName + " en el flujo", e);
                 } finally {
                     log.info("Memoria del PDF {} liberada explícitamente.", fileName);
-                    if (pdfSanitizier.getPdfDocument() != null) {
-                        pdfSanitizier.setPdfDocument(
-                                pdfSanitizier.getPdfDocument()
-                                        .clearContent()
-                        );
-                    }
-                    if (microcurriculum != null) {
-                        microcurriculum.deleteTempFile();
+                    if (microPdf != null) {
+                        microPdf.deleteTempFile();
                     }
                 }
             }
@@ -141,22 +125,15 @@ public class RabbitWorkerGmail {
                                     result.uuid()
                             );
 
-                    rabbitWorkerDrive.uploadListenerDrive(
-                            new DriveUploadRecord(
-                                    iaEvaluationId,
-                                    DriveFolderEnum.TEMPORAL,
-                                    result.fileName(),
-                                    result.path(),
-                                    result.pdfDocument()
-                            )
+                    rabbitTemplate.convertAndSend(
+                            RabbitConfig.DRIVE_EXCHANGE,
+                            RabbitConfig.DRIVE_ROUTING_KEY,
+                            new ConsumeDriveRecord(iaEvaluationId)
                     );
                 }
                 processedEmailStatusService.markProcessed(messageId, Status.PROCESSED);
             }
 
-        } catch (BusinessValidationException bex) {
-            log.warn("Validación de negocio fallida para el correo {}: {}", messageId, bex.getMessage());
-            throw new AmqpRejectAndDontRequeueException(bex.getMessage(), bex);
         } catch (Exception e) {
             log.error("Error crítico procesando mensaje {}", messageId, e);
             try {
@@ -167,33 +144,17 @@ public class RabbitWorkerGmail {
             throw new AmqpRejectAndDontRequeueException(e.getMessage(), e);
         } finally {
             if (pdfSanitized != null) {
-                for (PdfValidation pv : pdfSanitized) {
-                    if (pv != null && pv.getPdfDocument() != null) {
-                        pv.setPdfDocument(pv.getPdfDocument().clearContent());
-                    }
-                }
                 pdfSanitized.clear();
-                long execution = System.currentTimeMillis() - startTime;
-                log.info("EL TIEMPO DE EJECUCIÓN FUE "+execution);
             }
+
+            long execution =
+                    System.currentTimeMillis() - startTime;
+
+            log.info(
+                    "EL TIEMPO DE EJECUCIÓN FUE {}",
+                    execution
+            );
         }
-    }
-
-
-
-    private <T,W> List<W> extractData(List<T> list, Function<T,W> mapper){
-        return list.stream()
-                .map(mapper)
-                .toList();
-    }
-
-    private List<PdfProcessingResultWithId> enrichedResults(List<Long>idIaList, List<PdfProcessingResult> pdfProcessingResults){
-       return IntStream.range(0, pdfProcessingResults.size())
-                .mapToObj(i -> new PdfProcessingResultWithId(
-                        idIaList.get(i),
-                        pdfProcessingResults.get(i)
-                ))
-                .toList();
     }
 
 

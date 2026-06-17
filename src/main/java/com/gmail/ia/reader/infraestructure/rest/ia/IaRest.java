@@ -1,12 +1,10 @@
 package com.gmail.ia.reader.infraestructure.rest.ia;
 
 import com.gmail.ia.reader.application.usecases.iaEvaluation.IaEvaluationService;
+import com.gmail.ia.reader.domain.dtos.iaevaluation.IaEvaluationDetailResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.UUID;
 
@@ -19,5 +17,14 @@ public class IaRest {
     public ResponseEntity<Void> aprovedPlanner(@PathVariable UUID uuidIa){
         iaEvaluationService.aprovedPlanner(uuidIa);
         return ResponseEntity.noContent().build();
+    }
+    @GetMapping("/{uuidIa}")
+    public ResponseEntity<IaEvaluationDetailResponse> getEvaluation(
+            @PathVariable UUID uuidIa
+    ) {
+
+        return ResponseEntity.ok(
+                iaEvaluationService.getEvaluation(uuidIa)
+        );
     }
 }

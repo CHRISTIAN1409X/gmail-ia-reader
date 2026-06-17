@@ -44,6 +44,7 @@ public class SecurityConfig {
                 .authorizeHttpRequests((request)->{
                     request.requestMatchers("/login").permitAll();
                             request.requestMatchers("user/**").permitAll()
+                                    .requestMatchers("/ia/**").permitAll() //borrarrrrrrrrrrrrrrrrrrrrrrrrrrrrr
                     .anyRequest().authenticated();
                 })
                 .sessionManagement(management-> management.sessionCreationPolicy(SessionCreationPolicy.STATELESS))

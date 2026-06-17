@@ -43,6 +43,7 @@ public class EmailServiceImpl implements EmailService {
         for (PdfProcessingResult singleResult: newPdfProcessing){
             IaEvaluation iaEvaluation = IaEvaluation.builder()
                     .id(null)
+                    .uuid(singleResult.uuid())
                     .score(calculateScoreCriteriaResult(singleResult.iaResponse().listCriteriaResult()))
                     .email(email)
                     .criteriaResults(singleResult.iaResponse().listCriteriaResult())
@@ -70,7 +71,7 @@ public class EmailServiceImpl implements EmailService {
 
     private Double calculateScoreCriteriaResult(List<CriteriaResult> criteriaResults){
         return criteriaResults.stream()
-                .mapToInt(CriteriaResult::severity)
+                .mapToInt(CriteriaResult::score)
                 .average()
                 .orElse(0.0);
     }

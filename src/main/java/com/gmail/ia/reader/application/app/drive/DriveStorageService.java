@@ -1,11 +1,13 @@
 package com.gmail.ia.reader.application.app.drive;
 
+import com.gmail.ia.reader.domain.dtos.drive.UploadDriveResponse;
 import com.gmail.ia.reader.domain.enums.DriveFolderEnum;
 import com.gmail.ia.reader.domain.dtos.gmail.pdf.PdfDocument;
 import com.google.api.client.http.InputStreamContent;
 import com.google.api.services.drive.Drive;
 import com.google.api.services.drive.model.File;
 import com.google.api.services.drive.model.FileList;
+import com.google.api.services.drive.model.Permission;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
@@ -30,61 +32,46 @@ public class DriveStorageService {
 
     private final Drive drive;
 
-    public String uploadPdf(
+    public UploadDriveResponse uploadPdf(
             DriveFolderEnum area,
             String relativePath,
-            PdfDocument pdfDocument){
+            PdfDocument pdfDocument) {
 
         try {
-
-            String folderId =
-                    resolveFolderHierarchy(
-                            rootFolderId,
-                            area,
-                            relativePath
-                    );
+            String folderId = resolveFolderHierarchy(rootFolderId, area, relativePath);
 
             File metadata = new File();
+            String finalName = LocalDateTime.now()
+                    .format(DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss"))
+                    + "_"
+                    + pdfDocument.fileName();
 
-            String finalName =
-                    LocalDateTime.now()
-                            .format(
-                                    DateTimeFormatter.ofPattern(
-                                            "yyyyMMdd_HHmmss"
-                                    )
-                            )
-                            + "_"
-                            + pdfDocument.fileName();
+            metadata.setName(finalName);
+            metadata.setParents(List.of(folderId));
 
-            metadata.setName(
-                    finalName
+            InputStreamContent content = new InputStreamContent(
+                    "application/pdf",
+                    Files.newInputStream(pdfDocument.tempFile())
             );
 
-            metadata.setParents(
-                    List.of(folderId)
-            );
+            File uploaded = drive.files()
+                    .create(metadata, content)
+                    .setFields("id, webViewLink")
+                    .execute();
 
-            InputStreamContent content =
-                    new InputStreamContent(
-                            "application/pdf",
-                            Files.newInputStream(
-                                   pdfDocument.tempFile()
-                            )
-                    );
+            Permission readerPermission = new Permission()
+                    .setType("anyone")
+                    .setRole("reader");
 
-            File uploaded =
-                    drive.files()
-                            .create(metadata, content)
-                            .setFields("id")
-                            .execute();
+            drive.permissions()
+                    .create(uploaded.getId(), readerPermission)
+                    .execute();
 
-            return uploaded.getId();
+
+            return new UploadDriveResponse(uploaded.getId(), uploaded.getWebViewLink());
 
         } catch (Exception e) {
-            throw new RuntimeException(
-                    "Error subiendo PDF a Drive",
-                    e
-            );
+            throw new RuntimeException("Error subiendo PDF a Drive y configurando permisos", e);
         }
     }
 
@@ -190,47 +177,36 @@ public class DriveStorageService {
                 .getId();
     }
 
-    public void moveToApproved(
-            String fileId,
-            String path) {
-
+    public String moveToApproved(String fileId, String path) {
         try {
+            String approvedFolderId = resolveFolderHierarchy(rootFolderId, DriveFolderEnum.APROBADOS, path);
 
-            String approvedFolderId =
-                    resolveFolderHierarchy(
-                            rootFolderId,
-                            DriveFolderEnum.APROBADOS,
-                            path
-                    );
 
-            File file =
-                    drive.files()
-                            .get(fileId)
-                            .setFields("parents")
-                            .execute();
+            File file = drive.files()
+                    .get(fileId)
+                    .setFields("parents")
+                    .execute();
+            String previousParents = String.join(",", file.getParents());
 
-            String previousParents =
-                    String.join(
-                            ",",
-                            file.getParents()
-                    );
+            Permission readerPermission = new Permission()
+                    .setType("anyone")
+                    .setRole("reader");
 
-            drive.files()
-                    .update(fileId, null)
-                    .setAddParents(
-                            approvedFolderId
-                    )
-                    .setRemoveParents(
-                            previousParents
-                    )
+            drive.permissions()
+                    .create(fileId, readerPermission)
                     .execute();
 
-        } catch (Exception e) {
+            File updatedFile = drive.files()
+                    .update(fileId, null)
+                    .setAddParents(approvedFolderId)
+                    .setRemoveParents(previousParents)
+                    .setFields("webViewLink")
+                    .execute();
 
-            throw new RuntimeException(
-                    "Error moviendo archivo a aprobados",
-                    e
-            );
+            return updatedFile.getWebViewLink();
+
+        } catch (Exception e) {
+            throw new RuntimeException("Error moviendo archivo a aprobados y configurando permisos", e);
         }
     }
 

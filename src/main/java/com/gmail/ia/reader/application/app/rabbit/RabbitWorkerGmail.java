@@ -8,20 +8,16 @@ import com.gmail.ia.reader.application.app.gmail.sender.GmailSender;
 import com.gmail.ia.reader.application.app.gmail.validation.EmailValidationService;
 import com.gmail.ia.reader.application.implementations.processedEmail.ProcessedEmailStatusServiceImpl;
 import com.gmail.ia.reader.application.usecases.email.EmailService;
-import com.gmail.ia.reader.domain.dtos.drive.DriveUploadRecord;
+import com.gmail.ia.reader.domain.dtos.drive.ConsumeDriveRecord;
 import com.gmail.ia.reader.domain.dtos.gmail.pdf.PdfDocument;
 import com.gmail.ia.reader.domain.dtos.iaevaluation.IaEvaluationCreated;
 import com.gmail.ia.reader.domain.dtos.pdf.PdfProcessingResult;
-import com.gmail.ia.reader.domain.dtos.pdf.PdfProcessingResultWithId;
-import com.gmail.ia.reader.domain.enums.DriveFolderEnum;
 import com.gmail.ia.reader.domain.dtos.cloude.IaRespondeRecord;
 import com.gmail.ia.reader.domain.dtos.gmail.EmailValidationResult;
 import com.gmail.ia.reader.domain.dtos.gmail.ParsedEmail;
 import com.gmail.ia.reader.domain.dtos.gmail.pdf.PdfValidation;
 import com.gmail.ia.reader.domain.dtos.rabbit.GmailEvent;
-import com.gmail.ia.reader.infraestructure.advicers.exceptions.BusinessValidationException;
 import com.gmail.ia.reader.infraestructure.config.rabbit.RabbitConfig;
-import com.gmail.ia.reader.infraestructure.models.FilePath;
 import com.gmail.ia.reader.infraestructure.models.enums.Status;
 import com.google.api.services.gmail.model.Message;
 import lombok.RequiredArgsConstructor;
@@ -34,9 +30,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
-import java.util.function.Function;
 import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -133,7 +127,7 @@ public class RabbitWorkerGmail {
                     rabbitTemplate.convertAndSend(
                             RabbitConfig.DRIVE_EXCHANGE,
                             RabbitConfig.DRIVE_ROUTING_KEY,
-                            new DriveUploadRecord(iaEvaluationId)
+                            new ConsumeDriveRecord(iaEvaluationId)
                     );
                 }
                 processedEmailStatusService.markProcessed(messageId, Status.PROCESSED);

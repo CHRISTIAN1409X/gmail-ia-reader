@@ -9,6 +9,7 @@ import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.UUID;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -33,8 +34,11 @@ public class IaEvaluation {
     )
     private Long id;
 
-    private Double score;
+    @Builder.Default
+    @Column(name = "uuid", unique = true, nullable = false, updatable = false)
+    private UUID uuid = UUID.randomUUID();
 
+    private Double score;
 
     @Column(name = "pdf_name")
     private String pdfName;
@@ -44,6 +48,9 @@ public class IaEvaluation {
 
     @Column(name = "drive_file_id")
     private String driveFileId;
+
+    @Column(name = "url_pdf_drive")
+    private String urlPdfDrive;
 
     @Column(name = "local_temp_path")
     private String localTempPath;

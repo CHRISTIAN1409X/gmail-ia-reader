@@ -1,8 +1,8 @@
 package com.gmail.ia.reader.application.app.rabbit;
 
 import com.gmail.ia.reader.application.app.drive.DriveStorageService;
-import com.gmail.ia.reader.application.app.ia.IaAnaliticServiceImpl;
 import com.gmail.ia.reader.application.app.gmail.GmailExtractorService;
+import com.gmail.ia.reader.application.app.usecases.IaAnaliticService;
 import com.gmail.ia.reader.application.app.gmail.GmailMessageParser;
 import com.gmail.ia.reader.application.app.gmail.sender.GmailSender;
 import com.gmail.ia.reader.application.app.gmail.validation.EmailValidationService;
@@ -15,6 +15,7 @@ import com.gmail.ia.reader.domain.dtos.pdf.PdfProcessingResult;
 import com.gmail.ia.reader.domain.dtos.cloude.IaRespondeRecord;
 import com.gmail.ia.reader.domain.dtos.gmail.EmailValidationResult;
 import com.gmail.ia.reader.domain.dtos.gmail.ParsedEmail;
+import com.gmail.ia.reader.domain.dtos.gmail.pdf.PdfDocument;
 import com.gmail.ia.reader.domain.dtos.gmail.pdf.PdfValidation;
 import com.gmail.ia.reader.domain.dtos.rabbit.GmailEvent;
 import com.gmail.ia.reader.infraestructure.config.rabbit.RabbitConfig;
@@ -42,7 +43,8 @@ import static com.gmail.ia.reader.domain.logic.EmailUtils.recreatePath;
 @Component
 public class RabbitWorkerGmail {
     private static final Logger log = LoggerFactory.getLogger(RabbitWorkerGmail.class);
-    private final IaAnaliticServiceImpl claudeAnaliticService;
+    private final IaAnaliticService iaAnaliticService;
+    private final DriveStorageService driveStorageService;
     private final EmailValidationService emailValidationService;
     private final GmailSender gmailSender;
     private final GmailMessageParser parser;
@@ -50,7 +52,6 @@ public class RabbitWorkerGmail {
     private final ProcessedEmailStatusServiceImpl processedEmailStatusService;
     private final EmailService emailService;
     private final RabbitWorkerDrive rabbitWorkerDrive;
-    private final DriveStorageService driveStorageService;
     private final RabbitTemplate rabbitTemplate;
 
     private final String[] listEmailsError =
@@ -91,7 +92,7 @@ public class RabbitWorkerGmail {
                 fileName = pdfSanitizier.getPdfDocument().fileName();
                 PdfDocument microPdf = driveStorageService.getMcPdf(targetSubject,fileName);
                 try {
-                    IaRespondeRecord iaRespondeRecord = claudeAnaliticService.analize(emailParsed, pdfSanitizier.getPdfDocument(),microPdf);
+                    IaRespondeRecord iaRespondeRecord = iaAnaliticService.analize(emailParsed, pdfSanitizier.getPdfDocument(), microPdf);
                     path = recreatePath(iaRespondeRecord.listPathPart());
                     UUID correlationId = UUID.randomUUID();
                     pdfProcessingResults.add(new PdfProcessingResult(correlationId,pdfSanitizier.getPdfDocument().tempFile().toString(),iaRespondeRecord,path,fileName));
@@ -155,7 +156,6 @@ public class RabbitWorkerGmail {
             );
         }
     }
-
 
     private void sendError(EmailValidationResult result) {
 

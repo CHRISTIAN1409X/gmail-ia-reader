@@ -290,6 +290,11 @@ public class DriveStorageService {
         }
     }
 
+    private String stripAccents(String value) {
+        return java.text.Normalizer.normalize(value, java.text.Normalizer.Form.NFD)
+                .replaceAll("\\p{M}", "");
+    }
+
     private String escapeDriveQuery(
             String value) {
 

@@ -41,9 +41,11 @@ public class SecurityConfig {
         httpSecurity
                 .cors(Customizer.withDefaults())
                 .csrf(AbstractHttpConfigurer::disable)
+                .headers(headers -> headers.frameOptions(frameOptions -> frameOptions.disable()))
                 .authorizeHttpRequests((request)->{
                     request.requestMatchers("/login").permitAll();
                             request.requestMatchers("user/**").permitAll()
+                                    .requestMatchers("/ia/**").permitAll() //borrarrrrrrrrrrrrrrrrrrrrrrrrrrrrr
                     .anyRequest().authenticated();
                 })
                 .sessionManagement(management-> management.sessionCreationPolicy(SessionCreationPolicy.STATELESS))

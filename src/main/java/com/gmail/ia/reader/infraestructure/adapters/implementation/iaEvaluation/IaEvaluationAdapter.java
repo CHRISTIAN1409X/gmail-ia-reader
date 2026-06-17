@@ -22,7 +22,10 @@ public class IaEvaluationAdapter implements DaoCrudPort<IaEvaluation>, IaEvaluat
 
     @Override
     public List<IaEvaluation> selectAll() {
-        return List.of();
+        return entityManager.createQuery(
+                "SELECT i FROM IaEvaluation i JOIN FETCH i.email ORDER BY i.createdAt DESC",
+                IaEvaluation.class
+        ).getResultList();
     }
 
     @Override

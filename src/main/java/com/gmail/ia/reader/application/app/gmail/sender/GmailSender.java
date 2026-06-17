@@ -55,10 +55,18 @@ public class GmailSender {
 
         htmlBody.append("</div>");
 
+        sendRaw(recipient, subject, htmlBody.toString());
+    }
+
+    public void sendEmail(String recipient, String subject, String htmlBody) throws IOException {
+        sendRaw(recipient, subject, htmlBody);
+    }
+
+    private void sendRaw(String recipient, String subject, String htmlBody) throws IOException {
         String mimeFormat = "To: " + recipient + "\n" +
                 "Subject: " + subject + "\n" +
                 "Content-Type: text/html; charset=utf-8\n\n" +
-                htmlBody.toString();
+                htmlBody;
 
         String encodedText = Base64.getUrlEncoder().withoutPadding().encodeToString(mimeFormat.getBytes("UTF-8"));
 

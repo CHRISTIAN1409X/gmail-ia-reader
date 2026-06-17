@@ -290,6 +290,18 @@ public class DriveStorageService {
         }
     }
 
+    public byte[] downloadFile(String fileId) {
+        try {
+            java.io.ByteArrayOutputStream out = new java.io.ByteArrayOutputStream();
+            drive.files()
+                    .get(fileId)
+                    .executeMediaAndDownloadTo(out);
+            return out.toByteArray();
+        } catch (Exception e) {
+            throw new RuntimeException("Error descargando archivo de Drive: " + fileId, e);
+        }
+    }
+
     private String stripAccents(String value) {
         return java.text.Normalizer.normalize(value, java.text.Normalizer.Form.NFD)
                 .replaceAll("\\p{M}", "");

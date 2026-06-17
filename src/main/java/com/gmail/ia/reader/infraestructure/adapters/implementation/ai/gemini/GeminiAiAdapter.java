@@ -51,7 +51,7 @@ public class GeminiAiAdapter {
             Formato JSON requerido:
             {
               "criteriaResults": [
-                { "criterion": "nombre del criterio", "passed": true, "observation": "observación", "severity": 8 }
+                { "criterion": "nombre del criterio", "passed": true, "observation": "observación", "score": 8 }
               ],
               "pathParts": [
                 { "partPath": "nombre del nivel de carpeta 1" },
@@ -60,8 +60,8 @@ public class GeminiAiAdapter {
               ]
             }
 
-            severity debe ser un número del 1 al 10 (10 = máxima importancia).
-            Si el criterio no se puede evaluar o no hay micro-currículo, usar passed=false y severity=0.
+            score debe ser un número del 1 al 10 (10 = máxima importancia).
+            Si el criterio no se puede evaluar o no hay micro-currículo, usar passed=false y score=0.
             """;
 
     private static final String PROMPT_WITHOUT_MICRO = """
@@ -82,7 +82,7 @@ public class GeminiAiAdapter {
             Formato JSON requerido:
             {
               "criteriaResults": [
-                { "criterion": "nombre del criterio", "passed": true, "observation": "observación", "severity": 8 }
+                { "criterion": "nombre del criterio", "passed": true, "observation": "observación", "score": 8 }
               ],
               "pathParts": [
                 { "partPath": "nombre del nivel de carpeta 1" },
@@ -91,8 +91,8 @@ public class GeminiAiAdapter {
               ]
             }
 
-            severity debe ser un número del 1 al 10 (10 = máxima importancia).
-            Si el criterio no se puede evaluar, usar passed=false y severity=0.
+            score debe ser un número del 1 al 10 (10 = máxima importancia).
+            Si el criterio no se puede evaluar, usar passed=false y score=0.
             """;
 
     private final RestClient restClient;

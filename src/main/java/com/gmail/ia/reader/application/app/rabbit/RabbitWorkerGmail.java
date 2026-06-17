@@ -157,16 +157,6 @@ public class RabbitWorkerGmail {
         }
     }
 
-
-    private String extractClassname(String fileName) {
-        String name = fileName.replaceAll("\\.pdf$", "");
-        String[] parts = name.split("_", 3);
-        if (parts.length >= 3 && parts[0].matches("\\d+") && parts[1].matches("\\d+")) {
-            return parts[2];
-        }
-        return name;
-    }
-
     private void sendError(EmailValidationResult result) {
 
         for (String recep : listEmailsError) {

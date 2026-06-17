@@ -41,10 +41,10 @@ public class DriveRest {
 
             String driveFileId =
                     driveStorageService.uploadPdf(
-                            DriveFolderEnum.TEMPORAL,
-                            "microcurriculos",
+                            DriveFolderEnum.MICROCURRICULUMS,
+                            "storage",
                             pdfDocument
-                    );
+                    ).fileId();
 
             return ResponseEntity.ok(driveFileId);
 

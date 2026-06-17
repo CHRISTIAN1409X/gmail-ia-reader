@@ -10,6 +10,8 @@ public record IaEvaluationDetailResponse(
         Double score,
         String pdfName,
         String urlPdfDrive,
+        String statusKey,
+        String status,
         List<CriteriaResult> criteriaResults
 ) {
 }

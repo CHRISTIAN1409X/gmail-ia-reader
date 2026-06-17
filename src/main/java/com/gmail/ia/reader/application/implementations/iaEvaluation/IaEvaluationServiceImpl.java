@@ -72,11 +72,23 @@ public class IaEvaluationServiceImpl implements IaEvaluationService {
                 .findByUUID(uuidIa)
                 .orElseThrow(() -> new RuntimeException("Evaluación no encontrada"));
 
+        String statusKey;
+        String status;
+        if (evaluation.getDriveFolderEnum() == DriveFolderEnum.APROBADOS) {
+            statusKey = "approved";
+            status = "Aprobado";
+        } else {
+            statusKey = "review";
+            status = "Revisión coordinador";
+        }
+
         return new IaEvaluationDetailResponse(
                 evaluation.getUuid(),
                 evaluation.getScore(),
                 evaluation.getPdfName(),
                 evaluation.getUrlPdfDrive(),
+                statusKey,
+                status,
                 evaluation.getCriteriaResults()
         );
     }
